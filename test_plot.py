@@ -7,7 +7,7 @@ from matplotlib.collections import PathCollection
 import numpy as np
 import pandas as pd
 
-from main import plot_grouped_histogram
+from NumberCruncher import plot_grouped_histogram
 
 
 class PlotGroupedHistogramTest(unittest.TestCase):
