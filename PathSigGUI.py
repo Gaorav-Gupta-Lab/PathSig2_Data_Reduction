@@ -67,6 +67,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.run_btn = QtWidgets.QPushButton("▶ Process Data")
         self.exit_btn = QtWidgets.QPushButton("✖ EXIT")
         self.main_widget = QtWidgets.QWidget()
+
+        self.message_box = QtWidgets.QMessageBox()
+
         self.initialize_ui()
 
     def initialize_ui(self):
@@ -156,32 +159,66 @@ class MainWindow(QtWidgets.QMainWindow):
         layout.addLayout(button_layout)
         self.setCentralWidget(self.main_widget)
 
-        QtWidgets.QMessageBox.critical(self, "You Forgot Something", "Enter a valid TSV file and output folder.")
+
+
+        #QtWidgets.QMessageBox.critical(self, "You Forgot Something", "Enter a valid TSV file and output folder.")
     def process_data(self):
         self.log_to_console(
             "Passing Channel Labels.  If any missing labels are intentional, it is safe to ignore the warnings",
             self.notice_color)
+
         channel_label_list = []
         if self.fam_label_edit.text():
             channel_label_list.append(self.fam_label_edit.text())
         else:
+            channel_label_list.append("")
             self.log_to_console("No FAM Channel Label Entered.", self.warning_color)
 
+        if self.hex_label_edit.text():
+            channel_label_list.append(self.hex_label_edit.text())
+        else:
+            channel_label_list.append("")
+            self.log_to_console("No HEX Channel Label Entered.", self.warning_color)
+
+        if self.cy5_label_edit.text():
+            channel_label_list.append(self.cy5_label_edit.text())
+        else:
+            channel_label_list.append("")
+            self.log_to_console("No CY5 Channel Label Entered.", self.warning_color)
+
+        if self.cy55_label_edit.text():
+            channel_label_list.append(self.cy55_label_edit.text())
+        else:
+            channel_label_list.append("")
+            self.log_to_console("No CY5.5 Channel Label Entered.", self.warning_color)
+
+        if self.rox_label_edit.text():
+            channel_label_list.append(self.rox_label_edit.text())
+        else:
+            channel_label_list.append("")
+            self.log_to_console("No ROX Channel Label Entered.", self.warning_color)
+
+        if self.atto590_label_edit.text():
+            channel_label_list.append(self.atto590_label_edit.text())
+        else:
+            channel_label_list.append("")
+            self.log_to_console("No ATTO590 Channel Label Entered.", self.warning_color)
+
         # Question popup with Yes/No buttons
-        reply = QtWidgets.QMessageBox.question(
+        reply = self.message_box.question(
             self,
             "Take Heed",
             "Are Channel Labels Correct?",
             QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
             QtWidgets.QMessageBox.StandardButton.No  # Default focused button
         )
+
         if reply == QtWidgets.QMessageBox.StandardButton.Yes:
             if self.path_to_tsv and self.output_folder:
-                ToolBox.debug_messenger(self.output_folder)
                 NumberCruncher.DataProcessing(self.path_to_tsv)
             else:
-                self.log_to_console("Please select a TSV file and an output folder.", self.warning_color)
-                QtWidgets.QMessageBox.critical(self, "You Forgot Something", "Enter a valid TSV file and output folder.")
+                self.log_to_console("Please select a TSV file and/or output folder.", self.warning_color)
+                self.message_box.critical(self, "You Forgot Something", "Enter a valid TSV file and output folder.")
 
     def select_tsv_file(self) -> None:
 
