@@ -12,7 +12,7 @@ import NumberCruncher
 from libraries.StyleSheetLoader import load_stylesheet
 import libraries.Tool_Box as ToolBox
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 __author__ = "Dennis A. Simpson"
 __copyright__ = "Copyright 2027, University of North Carolina at Chapel Hill"
 __email__ = "dennis@email.unc.edu"
@@ -215,7 +215,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if reply == QtWidgets.QMessageBox.StandardButton.Yes:
             if self.path_to_tsv and self.output_folder:
-                NumberCruncher.DataProcessing(self.path_to_tsv)
+                NumberCruncher.DataProcessing(self.path_to_tsv, self.ouput_folder, channel_label_list)
             else:
                 self.log_to_console("Please select a TSV file and/or output folder.", self.warning_color)
                 self.message_box.critical(self, "You Forgot Something", "Enter a valid TSV file and output folder.")

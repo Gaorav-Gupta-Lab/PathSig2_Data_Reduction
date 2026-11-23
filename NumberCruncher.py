@@ -13,7 +13,7 @@ import seaborn
 import matplotlib.pyplot as plt
 import libraries.Tool_Box as ToolBox
 
-def plot_grouped_histogram(plotting_df):
+def plot_grouped_histogram(output_folder, plotting_df):
     grouped = plotting_df.groupby(["Sample", "Target"], sort=False, as_index=False).agg(
         average_data=('Data', 'mean'), sem_data=('Data', 'sem')
     )
@@ -73,9 +73,10 @@ def plot_grouped_histogram(plotting_df):
 
         # Sanitize target name in case it contains characters invalid for Windows filenames (like / or :)
         safe_target = str(target).replace("/", "_").replace(":", "_")
-        filepath = os.path.join("D:\\", f"{safe_target}_Test_plot.png")
+        output_filepath = "{}{}_plot.png".format(output_folder, safe_target)
+        # filepath = os.path.join("D:\\", f"{safe_target}_Test_plot.png")
 
-        fig.savefig(filepath, dpi=600, bbox_inches="tight")
+        fig.savefig(output_filepath, dpi=600, bbox_inches="tight")
         plt.show()
         plt.close(fig)
 
@@ -111,9 +112,16 @@ def original_plot_grouped_histogram(plotting_df):
     return fig, axes.flat
 
 class DataProcessing:
-    def __init__(self, tsv_file, fam_label):
+    def __init__(self, tsv_file, ouput_folder, channel_label_list):
         self.tsv_file = tsv_file
-        self.fam_label = fam_label
+        self.ouput_folder = ouput_folder
+        self.column_labels = channel_label_list
+        self.fam_label = channel_label_list[0]
+        self.hex_label = channel_label_list[1]
+        self.cy5_label = channel_label_list[2]
+        self.cy55_label = channel_label_list[3]
+        self.rox_label = channel_label_list[4]
+        self.atto590_label = channel_label_list[5]
         self.main()
 
     def main(self):
@@ -123,20 +131,22 @@ class DataProcessing:
 
         # ToDo: This section need to be tied to a GUI.
         sample = ""
+        """
         fam_label = "NHEJ"
         hex_label = "Genomic"
         rox_label = "Germline"
         cy5_label = "LBR2.1"
         cy55_label = "Not Used"
         atto590_label = "TMEJ-AAG"
+        """
         replicates = 2
         output_header = "Sample\t"
-        column_label_list = [fam_label, hex_label, cy5_label, cy55_label, rox_label, atto590_label]
+        #column_label_list = [fam_label, hex_label, cy5_label, cy55_label, rox_label, atto590_label]
 
         # Make header string for output file
-        for i in range(len(column_label_list)):
+        for i in range(len(self.column_labels)):
             for j in range(replicates):
-                output_header += ("{}\t".format(column_label_list[i]))
+                output_header += ("{}\t".format(self.column_labels[i]))
         output_header += "\n"
 
         fam_copies = ""
@@ -169,31 +179,31 @@ class DataProcessing:
 
             # Get copies per uL from data.
             copies = float(row[6])
-            if row[5] == fam_label:
+            if row[5] == self.fam_label:
                 fam_copies = copies
-            elif row[5] == hex_label:
+            elif row[5] == self.hex_label:
                 hex_copies = copies
-            elif row[5] == cy5_label:
+            elif row[5] == self.cy5_label:
                 cy5_copies = copies
-            elif row[5] == cy55_label:
+            elif row[5] == self.cy55_label:
                 cy55_copies = copies
-            elif row[5] == rox_label:
+            elif row[5] == self.rox_label:
                 rox_copies = copies
-            elif row[5] == atto590_label:
+            elif row[5] == self.atto590_label:
                 atto590_copies = copies
 
             # Assign normal control value based on control name
-            if controlname == fam_label:
+            if controlname == self.fam_label:
                 normalcontrol = fam_copies
-            elif controlname == hex_label:
+            elif controlname == self.hex_label:
                 normalcontrol = hex_copies
-            elif controlname == cy5_label:
+            elif controlname == self.cy5_label:
                 normalcontrol = cy5_copies
-            elif controlname == cy55_label:
+            elif controlname == self.cy55_label:
                 normalcontrol = cy55_copies
-            elif controlname == rox_label:
+            elif controlname == self.rox_label:
                 normalcontrol = rox_copies
-            elif controlname == atto590_label:
+            elif controlname == self.atto590_label:
                 normalcontrol = atto590_copies
             else:
                 # ToDo: This should display in the GUI.
@@ -254,7 +264,7 @@ class DataProcessing:
                                     normalized_values[3], normalized_values[4], normalized_values[5]))
 
             # This will be converted to pandas later
-            for label, normal_value in zip(column_label_list, normalized_values):
+            for label, normal_value in zip(self.column_labels, normalized_values):
                 if isinstance(normal_value, (int, float)):
                     ploting_data_dict[data_counter] = sample_name, label, normal_value
                     data_counter += 1
@@ -279,19 +289,19 @@ class DataProcessing:
         # df = pd.DataFrame.from_dict(normalized_sample_data_dict, orient='index', columns=column_label_list)
 
         # sorted_data = dict(sorted(ploting_data_dict.items(), key=lambda item: item[1][0]))
-        ploting_df_column_labels = ["Sample", "Target", "Data"]
+        plotting_df_column_labels = ["Sample", "Target", "Data"]
 
-        ploting_df = pd.DataFrame.from_dict(ploting_data_dict, orient='index', columns=ploting_df_column_labels)
+        plotting_df = pd.DataFrame.from_dict(ploting_data_dict, orient='index', columns=plotting_df_column_labels)
 
         # Remove rows that contain "Genomic", "No RNP", or "No Template" in the "Target" column.  These are not useful
         # for plotting
-        ploting_df = ploting_df[~ploting_df["Target"].str.contains("Genomic", case=False, na=False)]
-        ploting_df = ploting_df[~ploting_df["Sample"].str.contains(" No RNP", case=False, na=False)]
-        ploting_df = ploting_df[~ploting_df["Sample"].str.contains("No Template", case=False, na=False)]
+        plotting_df = plotting_df[~plotting_df["Target"].str.contains("Genomic", case=False, na=False)]
+        plotting_df = plotting_df[~plotting_df["Sample"].str.contains(" No RNP", case=False, na=False)]
+        plotting_df = plotting_df[~plotting_df["Sample"].str.contains("No Template", case=False, na=False)]
 
-        plot_grouped_histogram(ploting_df)
+        plot_grouped_histogram(self.ouput_folder, plotting_df)
 
-        outfile = open("D:{}Normalized_Data.tsv".format(os.sep), "w")
+        outfile = open("{}Normalized_Data.tsv".format(self.ouput_folder), "w")
         outfile.write(output_header + output_data)
         outfile.close()
 
