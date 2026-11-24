@@ -4,16 +4,15 @@ Script to normalize PathSig2 data.
 
 import csv
 import os
-from collections import defaultdict
-import scipy.stats as stats
-import numpy
-from contextlib import suppress as Suppress
 import pandas as pd
 import seaborn
 import matplotlib.pyplot as plt
 import libraries.Tool_Box as ToolBox
 
 def plot_grouped_histogram(output_folder, plotting_df):
+    """
+    Main plotting function for grouped histograms.
+    """
     grouped = plotting_df.groupby(["Sample", "Target"], sort=False, as_index=False).agg(
         average_data=('Data', 'mean'), sem_data=('Data', 'sem')
     )
@@ -21,6 +20,7 @@ def plot_grouped_histogram(output_folder, plotting_df):
     if len(targets) == 0:
         raise ValueError("No data available to plot")
 
+    # Create one plot for each target
     for target in targets:
         fig, ax = plt.subplots(figsize=(10, 5))
 
@@ -74,13 +74,15 @@ def plot_grouped_histogram(output_folder, plotting_df):
         # Sanitize target name in case it contains characters invalid for Windows filenames (like / or :)
         safe_target = str(target).replace("/", "_").replace(":", "_")
         output_filepath = "{}{}_plot.png".format(output_folder, safe_target)
-        # filepath = os.path.join("D:\\", f"{safe_target}_Test_plot.png")
 
         fig.savefig(output_filepath, dpi=600, bbox_inches="tight")
         plt.show()
         plt.close(fig)
 
 def original_plot_grouped_histogram(plotting_df):
+    """
+    Not used
+    """
     grouped = plotting_df.groupby(["Sample", "Target"], as_index=False).agg(
         average_data=('Data', 'mean'), sem_data=('Data', 'sem')
     )
@@ -129,19 +131,10 @@ class DataProcessing:
         ToolBox.debug_messenger("We here?")
         input_data_file = csv.reader(open(self.tsv_file), delimiter='\t')
 
-        # ToDo: This section need to be tied to a GUI.
         sample = ""
-        """
-        fam_label = "NHEJ"
-        hex_label = "Genomic"
-        rox_label = "Germline"
-        cy5_label = "LBR2.1"
-        cy55_label = "Not Used"
-        atto590_label = "TMEJ-AAG"
-        """
+        # ToDo: replicates should be from GUI or count number of samples and generate the header below.
         replicates = 2
         output_header = "Sample\t"
-        #column_label_list = [fam_label, hex_label, cy5_label, cy55_label, rox_label, atto590_label]
 
         # Make header string for output file
         for i in range(len(self.column_labels)):
@@ -157,7 +150,7 @@ class DataProcessing:
         atto590_copies = ""
 
         controlname = "Genomic"
-        normalcontrol = ""
+        normalcontrol_data = ""
 
         raw_data_dict = {}
         row_count = 0
@@ -194,17 +187,17 @@ class DataProcessing:
 
             # Assign normal control value based on control name
             if controlname == self.fam_label:
-                normalcontrol = fam_copies
+                normalcontrol_data = fam_copies
             elif controlname == self.hex_label:
-                normalcontrol = hex_copies
+                normalcontrol_data = hex_copies
             elif controlname == self.cy5_label:
-                normalcontrol = cy5_copies
+                normalcontrol_data = cy5_copies
             elif controlname == self.cy55_label:
-                normalcontrol = cy55_copies
+                normalcontrol_data = cy55_copies
             elif controlname == self.rox_label:
-                normalcontrol = rox_copies
+                normalcontrol_data = rox_copies
             elif controlname == self.atto590_label:
-                normalcontrol = atto590_copies
+                normalcontrol_data = atto590_copies
             else:
                 # ToDo: This should display in the GUI.
                 print("Warning: No normal control defined.")
@@ -212,33 +205,33 @@ class DataProcessing:
 
             # Normalize data to the normal control.  It is possible that one or more of the values are not defined.
             # If that is the case, set the normalized value to an empty string.
-            if normalcontrol and isinstance(fam_copies, (int, float)):
-                normalfam = fam_copies / normalcontrol
+            if normalcontrol_data and isinstance(fam_copies, (int, float)):
+                normalfam = fam_copies / float(normalcontrol_data)
             else:
                 normalfam = ""
 
-            if normalcontrol and isinstance(hex_copies, (int, float)):
-                normalhex = hex_copies / normalcontrol
+            if normalcontrol_data and isinstance(hex_copies, (int, float)):
+                normalhex = hex_copies / float(normalcontrol_data)
             else:
                 normalhex = ""
 
-            if normalcontrol and isinstance(cy5_copies, (int, float)):
-                normalcy5 = cy5_copies / normalcontrol
+            if normalcontrol_data and isinstance(cy5_copies, (int, float)):
+                normalcy5 = cy5_copies / float(normalcontrol_data)
             else:
                 normalcy5 = ""
 
-            if normalcontrol and isinstance(cy55_copies, (int, float)):
-                normalcy55 = cy55_copies / normalcontrol
+            if normalcontrol_data and isinstance(cy55_copies, (int, float)):
+                normalcy55 = cy55_copies / float(normalcontrol_data)
             else:
                 normalcy55 = ""
 
-            if normalcontrol and isinstance(rox_copies, (int, float)):
-                normalrox = rox_copies / normalcontrol
+            if normalcontrol_data and isinstance(rox_copies, (int, float)):
+                normalrox = rox_copies / float(normalcontrol_data)
             else:
                 normalrox = ""
 
-            if normalcontrol and isinstance(atto590_copies, (int, float)):
-                normalatto590 = atto590_copies / normalcontrol
+            if normalcontrol_data and isinstance(atto590_copies, (int, float)):
+                normalatto590 = atto590_copies /  float(normalcontrol_data)
             else:
                 normalatto590 = ""
 
@@ -250,10 +243,10 @@ class DataProcessing:
 
         # Make sure the dictionary is sorted by wells.  The ddPCR data is grouped by wells.
         # raw_data_dict = dict(sorted(raw_data_dict.items()))
-        normalized_sample_data_dict = defaultdict(list)
+
         output_data = ""
         data_counter = 0
-        ploting_data_dict = {}
+        plotting_data_dict = {}
 
         sorted_raw_data_dict = dict(sorted(raw_data_dict.items(), key=lambda item: (int(item[0][1:]), item[0][0])))
         for well in sorted_raw_data_dict:
@@ -266,32 +259,12 @@ class DataProcessing:
             # This will be converted to pandas later
             for label, normal_value in zip(self.column_labels, normalized_values):
                 if isinstance(normal_value, (int, float)):
-                    ploting_data_dict[data_counter] = sample_name, label, normal_value
+                    plotting_data_dict[data_counter] = sample_name, label, normal_value
                     data_counter += 1
 
-            # ToDo: this dictionary is for tsv file output.  Refactor.  Should be able to get data directly into string.
-            """
-            if sample_name not in normalized_sample_data_dict:
-                normalized_sample_data_dict[sample_name].append([normalized_values[0]])
-                normalized_sample_data_dict[sample_name].append([normalized_values[1]])
-                normalized_sample_data_dict[sample_name].append([normalized_values[2]])
-                normalized_sample_data_dict[sample_name].append([normalized_values[3]])
-                normalized_sample_data_dict[sample_name].append([normalized_values[4]])
-                normalized_sample_data_dict[sample_name].append([normalized_values[5]])
-            else:
-                normalized_sample_data_dict[sample_name][0].append(normalized_values[0])
-                normalized_sample_data_dict[sample_name][1].append(normalized_values[1])
-                normalized_sample_data_dict[sample_name][2].append(normalized_values[2])
-                normalized_sample_data_dict[sample_name][3].append(normalized_values[3])
-                normalized_sample_data_dict[sample_name][4].append(normalized_values[4])
-                normalized_sample_data_dict[sample_name][5].append(normalized_values[5])
-            """
-        # df = pd.DataFrame.from_dict(normalized_sample_data_dict, orient='index', columns=column_label_list)
-
-        # sorted_data = dict(sorted(ploting_data_dict.items(), key=lambda item: item[1][0]))
         plotting_df_column_labels = ["Sample", "Target", "Data"]
 
-        plotting_df = pd.DataFrame.from_dict(ploting_data_dict, orient='index', columns=plotting_df_column_labels)
+        plotting_df = pd.DataFrame.from_dict(plotting_data_dict, orient='index', columns=plotting_df_column_labels)
 
         # Remove rows that contain "Genomic", "No RNP", or "No Template" in the "Target" column.  These are not useful
         # for plotting
@@ -305,35 +278,6 @@ class DataProcessing:
         outfile.write(output_header + output_data)
         outfile.close()
 
-        exit("Last Dragons")
-        fam_data = ""
-        hex_data = ""
-        cy5_data = ""
-        cy55_data = ""
-        rox_data = ""
-        atto590_data = ""
-        data_list = [fam_data, hex_data, cy5_data, cy55_data, rox_data, atto590_data]
-        for sample_name in df.index:
-            for i, column_label in enumerate(column_label_list):
-                # ToolBox.debug_messenger(df.loc[sample_name:,column_label])
-                data_list[i] = df.loc[sample_name, column_label]
 
-            fam_data = normalized_sample_data_dict[sample_name][0]
-            hex_data = normalized_sample_data_dict[sample_name][1]
-            cy5_data = normalized_sample_data_dict[sample_name][2]
-            cy55_data = normalized_sample_data_dict[sample_name][3]
-            rox_data = normalized_sample_data_dict[sample_name][4]
-            atto590_data = normalized_sample_data_dict[sample_name][5]
-
-            # In case any data is None, this allows the program to continue without crashing.
-            with Suppress(TypeError):
-                print("FAM ", sample_name, numpy.mean(fam_data), stats.sem(fam_data))
-                print("HEX", sample_name, numpy.mean(hex_data), stats.sem(hex_data))
-                print("Cy5", sample_name, numpy.mean(cy5_data), stats.sem(cy5_data))
-                print("Cy55", sample_name, numpy.mean(cy55_data), stats.sem(cy55_data))
-                print("ROX", sample_name, numpy.mean(rox_data), stats.sem(rox_data))
-                print("Atto590", sample_name, numpy.mean(atto590_data), stats.sem(atto590_data))
-                continue
-            
 if __name__ == '__main__':
     DataProcessing(tsv_file = "D:{}ddPCR_Test_Data.tsv".format(os.sep))

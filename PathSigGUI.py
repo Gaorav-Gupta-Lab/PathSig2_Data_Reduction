@@ -215,7 +215,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if reply == QtWidgets.QMessageBox.StandardButton.Yes:
             if self.path_to_tsv and self.output_folder:
-                NumberCruncher.DataProcessing(self.path_to_tsv, self.ouput_folder, channel_label_list)
+                NumberCruncher.DataProcessing(self.path_to_tsv, self.output_folder, channel_label_list)
             else:
                 self.log_to_console("Please select a TSV file and/or output folder.", self.warning_color)
                 self.message_box.critical(self, "You Forgot Something", "Enter a valid TSV file and output folder.")
