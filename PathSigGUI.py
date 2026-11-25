@@ -10,9 +10,9 @@ from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtWidgets import QApplication
 import NumberCruncher
 from libraries.StyleSheetLoader import load_stylesheet
-import libraries.Tool_Box as ToolBox
+# import libraries.Tool_Box as ToolBox
 
-__version__ = "0.0.2"
+__version__ = "0.0.5"
 __author__ = "Dennis A. Simpson"
 __copyright__ = "Copyright 2027, University of North Carolina at Chapel Hill"
 __email__ = "dennis@email.unc.edu"
@@ -73,7 +73,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.initialize_ui()
 
     def initialize_ui(self):
-        # main_widget = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(self.main_widget)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
@@ -159,9 +158,6 @@ class MainWindow(QtWidgets.QMainWindow):
         layout.addLayout(button_layout)
         self.setCentralWidget(self.main_widget)
 
-
-
-        #QtWidgets.QMessageBox.critical(self, "You Forgot Something", "Enter a valid TSV file and output folder.")
     def process_data(self):
         self.log_to_console(
             "Passing Channel Labels.  If any missing labels are intentional, it is safe to ignore the warnings",
@@ -215,7 +211,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if reply == QtWidgets.QMessageBox.StandardButton.Yes:
             if self.path_to_tsv and self.output_folder:
-                NumberCruncher.DataProcessing(self.path_to_tsv, self.output_folder, channel_label_list)
+                data_processing = NumberCruncher.DataProcessing(self.path_to_tsv,self.output_folder,channel_label_list,[self.notice_color, self.warning_color, self.critical_error_color])
+                msg, msg_color = data_processing.main()
+
+                self.log_to_console(msg, msg_color)
             else:
                 self.log_to_console("Please select a TSV file and/or output folder.", self.warning_color)
                 self.message_box.critical(self, "You Forgot Something", "Enter a valid TSV file and output folder.")
@@ -224,8 +223,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.path_to_tsv, _ = \
             QtWidgets.QFileDialog.getOpenFileName(self, self.tr("File Select"),
-                                                  self.tr("C:{0}Users{0}{1}{0}Documents{0}"
-                                                          .format(os.sep, os.getlogin())))
+                                                  self.tr("C:{0}Users{0}{1}{0}Documents{0}".format(os.sep, os.getlogin())))
 
         if  os.path.basename(self.path_to_tsv) == "TempTSV.tsv":
             self.log_to_console("Cannot use file name TempTSV.tsv as input file.", self.warning_color)
