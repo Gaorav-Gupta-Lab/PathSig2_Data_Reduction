@@ -220,11 +220,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.message_box.critical(self, "You Forgot Something", "Enter a valid TSV file and output folder.")
 
     def select_tsv_file(self) -> None:
-
         self.path_to_tsv, _ = \
             QtWidgets.QFileDialog.getOpenFileName(self, self.tr("File Select"),
                                                   self.tr("C:{0}Users{0}{1}{0}Documents{0}".format(os.sep, os.getlogin())))
-
+        self.path_to_tsv = os.path.normpath(self.path_to_tsv)
         if  os.path.basename(self.path_to_tsv) == "TempTSV.tsv":
             self.log_to_console("Cannot use file name TempTSV.tsv as input file.", self.warning_color)
         elif self.path_to_tsv:
@@ -233,7 +232,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.log_to_console("TSV File Not Selected.", self.warning_color)
 
         if self.path_to_tsv:
-            self.input_edit.setText(self.path_to_tsv)
+            self.input_edit.setText(os.path.normpath(self.path_to_tsv))
 
         if not self.output_folder:
             self.output_folder = os.path.dirname(self.path_to_tsv) + os.sep
@@ -241,7 +240,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def select_output_folder(self):
         output_folder = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Output Folder")
-
         if output_folder:
             self.output_folder_edit.setText(output_folder+os.sep)
 
