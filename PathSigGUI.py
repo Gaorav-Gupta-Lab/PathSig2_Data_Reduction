@@ -12,7 +12,7 @@ import NumberCruncher
 from libraries.StyleSheetLoader import load_stylesheet
 # import libraries.Tool_Box as ToolBox
 
-__version__ = "0.0.5"
+__version__ = "0.1.0"
 __author__ = "Dennis A. Simpson"
 __copyright__ = "Copyright 2027, University of North Carolina at Chapel Hill"
 __email__ = "dennis@email.unc.edu"
@@ -63,6 +63,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.atto590_label = QtWidgets.QLabel("Atto590 Label:")
         self.atto590_label_edit = QtWidgets.QLineEdit()
         self.atto590_label_edit.setPlaceholderText("e.g., NHEJ, TMEJ-AAG, Copies, etc.")
+
+        self.normalization_channel_label = QtWidgets.QLabel("Normalization Channel:")
+        self.normalization_channel_edit = QtWidgets.QComboBox()
+        self.normalization_channel_edit.setPlaceholderText("Select Channel to Normalize Data")
+        self.normalization_channel_edit.addItems(["FAM", "HEX", "CY5", "CY5.5", "Rox", "Atto590"])
 
         self.run_btn = QtWidgets.QPushButton("▶ Process Data")
         self.exit_btn = QtWidgets.QPushButton("✖ EXIT")
@@ -131,6 +136,12 @@ class MainWindow(QtWidgets.QMainWindow):
         channel_layout.addWidget(self.rox_label, 0, 4); channel_layout.addWidget(self.rox_label_edit, 0, 5)
         channel_layout.addWidget(self.atto590_label, 1, 4); channel_layout.addWidget(self.atto590_label_edit, 1, 5)
 
+        # Row 2: Empty spacer row (20 pixels tall)
+        channel_layout.setRowMinimumHeight(2, 20)
+
+        channel_layout.addWidget(self.normalization_channel_label, 3, 0)
+        channel_layout.addWidget(self.normalization_channel_edit, 3, 1)
+
         # ---- Settings container (horizontal) ----
         settings_container = QtWidgets.QHBoxLayout()
         channel_box.setLayout(channel_layout)
@@ -162,6 +173,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.log_to_console(
             "Passing Channel Labels.  If any missing labels are intentional, it is safe to ignore the warnings",
             self.notice_color)
+
+        if self.normalization_channel_edit.currentText() == "":
+            self.log_to_console("No Normalization Channel Selected.", self.critical_error_color)
+            self.message_box.critical(self, "You Forgot Something", "Please select a normalization channel.")
+            return
 
         channel_label_list = []
         if self.fam_label_edit.text():
@@ -211,7 +227,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if reply == QtWidgets.QMessageBox.StandardButton.Yes:
             if self.path_to_tsv and self.output_folder:
-                data_processing = NumberCruncher.DataProcessing(self.path_to_tsv,self.output_folder,channel_label_list,[self.notice_color, self.warning_color, self.critical_error_color])
+                data_processing = (
+                    NumberCruncher.DataProcessing(
+                        self.path_to_tsv,self.output_folder,channel_label_list,
+                        [self.notice_color, self.warning_color, self.critical_error_color],
+                        self.normalization_channel_edit.currentText()
+                    ))
                 msg, msg_color = data_processing.main()
 
                 self.log_to_console(msg, msg_color)

@@ -9,9 +9,10 @@ import matplotlib.pyplot as plt
 # import libraries.Tool_Box as ToolBox
 
 class DataProcessing:
-    def __init__(self, tsv_file, output_folder, channel_label_list, color_list):
+    def __init__(self, tsv_file, output_folder, channel_label_list, color_list,normalization_channel):
         self.tsv_file = tsv_file
         self.output_folder = output_folder
+        self.normalization_channel = normalization_channel
         self.column_labels = channel_label_list
         self.fam_label = channel_label_list[0]
         self.hex_label = channel_label_list[1]
@@ -40,8 +41,7 @@ class DataProcessing:
         rox_copies = ""
         cy55_copies = ""
         atto590_copies = ""
-
-        controlname = "Genomic"
+        normalcontrol_data = ""
 
         raw_data_dict = {}
         row_count = 0
@@ -64,32 +64,24 @@ class DataProcessing:
 
             # Get copies per uL from data.
             copies = float(row[6])
-            if row[5] == self.fam_label:
+            channel_label = row[5]
+            if channel_label == self.fam_label:
                 fam_copies = copies
-            elif row[5] == self.hex_label:
+            elif channel_label == self.hex_label:
                 hex_copies = copies
-            elif row[5] == self.cy5_label:
+            elif channel_label == self.cy5_label:
                 cy5_copies = copies
-            elif row[5] == self.cy55_label:
+            elif channel_label == self.cy55_label:
                 cy55_copies = copies
-            elif row[5] == self.rox_label:
+            elif channel_label == self.rox_label:
                 rox_copies = copies
-            elif row[5] == self.atto590_label:
+            elif channel_label == self.atto590_label:
                 atto590_copies = copies
 
             # Assign normal control value based on control name
-            if controlname == self.fam_label:
-                normalcontrol_data = fam_copies
-            elif controlname == self.hex_label:
-                normalcontrol_data = hex_copies
-            elif controlname == self.cy5_label:
-                normalcontrol_data = cy5_copies
-            elif controlname == self.cy55_label:
-                normalcontrol_data = cy55_copies
-            elif controlname == self.rox_label:
-                normalcontrol_data = rox_copies
-            elif controlname == self.atto590_label:
-                normalcontrol_data = atto590_copies
+            channel_dye = row[17]
+            if self.normalization_channel == channel_dye:
+                normalcontrol_data = copies
             else:
                 return "Warning: No normal control defined.", self.critical_error_color
 
@@ -139,6 +131,7 @@ class DataProcessing:
         for well in sorted_raw_data_dict:
             sample_name = raw_data_dict[well][0][0]
             normalized_values = raw_data_dict[well][1]
+
             # Add sample name for tsv output
             output_data += ("{}".format(sample_name))
 
@@ -235,3 +228,5 @@ class DataProcessing:
             fig.savefig(output_filepath, dpi=600, bbox_inches="tight")
             plt.show()
             plt.close(fig)
+
+            return None
